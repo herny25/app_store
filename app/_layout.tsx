@@ -1,3 +1,6 @@
+import 'react-native-gesture-handler'; 
+
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
@@ -11,7 +14,7 @@ import {
   Syne_700Bold,
   Syne_800ExtraBold,
 } from '@expo-google-fonts/syne';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { initDatabase } from '../src/database/db';
 import { useSettingsStore } from '../src/store';
