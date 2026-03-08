@@ -1,0 +1,39 @@
+{
+  "name": "retailflow",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo-google-fonts/dm-sans": "^0.2.3",
+    "@expo-google-fonts/syne": "^0.2.3",
+    "date-fns": "^3.6.0",
+    "expo": "^54.0.0",
+    "expo-asset": "^55.0.8",
+    "expo-font": "~13.3.2",
+    "expo-print": "~15.0.8",
+    "expo-router": "~5.1.11",
+    "expo-sharing": "~14.0.8",
+    "expo-splash-screen": "~0.30.10",
+    "expo-sqlite": "~15.2.14",
+    "expo-status-bar": "~2.2.3",
+    "react": "19.0.0",
+    "react-native": "0.79.6",
+    "react-native-gesture-handler": "~2.24.0",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.11.1",
+    "react-native-uuid": "^2.0.2",
+    "zustand": "^4.5.5"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.0",
+    "@types/react": "~19.0.10",
+    "babel-preset-expo": "^55.0.10",
+    "typescript": "~5.8.3"
+  }
+}

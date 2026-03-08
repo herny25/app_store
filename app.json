@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "RetailFlow",
+    "slug": "retailflow",
+    "version": "1.0.0",
+    "sdkVersion": "54.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "retailflow",
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-sqlite",
+        {
+          "enableFTS": true
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "android": {
+      "package": "com.retailflow.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1B4FFF"
+      }
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.retailflow.app"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5612a418-b223-4d92-b9a0-e37888159604"
+      }
+    }
+  }
+}
