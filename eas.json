@@ -9,7 +9,8 @@
         "buildType": "apk"
       },
       "env": {
-        "NODE_ENV": "production"
+        "NODE_ENV": "production",
+        "NPM_CONFIG_LEGACY_PEER_DEPS": "true"
       }
     }
   },
