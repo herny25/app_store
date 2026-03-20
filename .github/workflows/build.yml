@@ -19,6 +19,8 @@ jobs:
   build:
     name: EAS Build (${{ github.event.inputs.profile || 'preview' }})
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
@@ -27,8 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '24'
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
@@ -43,6 +44,7 @@ jobs:
         run: eas build --platform android --profile ${{ github.event.inputs.profile || 'preview' }} --non-interactive
 
       - name: Upload artifact link to summary
+        if: success()
         run: |
-          echo "## Build completado" >> $GITHUB_STEP_SUMMARY
-          echo "Descarga el APK desde [expo.dev/accounts](https://expo.dev/accounts) > tu proyecto > Builds" >> $GITHUB_STEP_SUMMARY
+          echo "## Build completado ✅" >> $GITHUB_STEP_SUMMARY
+          echo "Descarga el APK desde [expo.dev](https://expo.dev) → tu proyecto → Builds" >> $GITHUB_STEP_SUMMARY
