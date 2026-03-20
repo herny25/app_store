@@ -10,6 +10,7 @@ import { COLORS, FONTS, RADIUS, SHADOWS, SPACING } from '../constants/theme';
 import { EmptyState } from '../components/ui';
 import { Button } from '../components/ui';
 import { CATEGORIES, PaymentMethod } from '../types';
+import * as DB from '../database/db';
 
 const PAYMENT_METHODS: { key: PaymentMethod; label: string; icon: string }[] = [
   { key: 'card', label: 'Tarjeta', icon: '💳' },
@@ -50,6 +51,19 @@ export default function POSScreen() {
   };
 
   const handlePayment = () => {
+    // Validar stock actualizado antes de cobrar
+    const stockErrors: string[] = [];
+    for (const cartItem of cart.items) {
+      const current = DB.getProductById(cartItem.product.id);
+      if (current && current.stock < cartItem.quantity) {
+        stockErrors.push(`${cartItem.product.name}: solo ${current.stock} en stock`);
+      }
+    }
+    if (stockErrors.length > 0) {
+      Alert.alert('Stock insuficiente', stockErrors.join('\n'));
+      return;
+    }
+
     const total = cart.total();
     const sale = cart.checkout(selectedMethod);
     setLastSaleNumber(sale.saleNumber);

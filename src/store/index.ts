@@ -102,6 +102,7 @@ export const useCartStore = create<CartState>((set, get) => ({
 interface ProductsState {
   products: Product[];
   loading: boolean;
+  error: string | null;
   search: string;
   selectedCategory: string;
   load: () => void;
@@ -114,21 +115,26 @@ interface ProductsState {
 export const useProductsStore = create<ProductsState>((set, get) => ({
   products: [],
   loading: true,
+  error: null,
   search: '',
   selectedCategory: 'Todos',
 
   load: () => {
     try {
       const products = DB.getAllProducts();
-      set({ products, loading: false });
+      set({ products, loading: false, error: null });
     } catch (e) {
-      set({ loading: false });
+      set({ loading: false, error: 'No se pudieron cargar los productos' });
     }
   },
 
   refresh: () => {
-    const products = DB.getAllProducts();
-    set({ products });
+    try {
+      const products = DB.getAllProducts();
+      set({ products, error: null });
+    } catch (e) {
+      set({ error: 'Error al actualizar productos' });
+    }
   },
 
   setSearch: (q) => set({ search: q }),
@@ -179,18 +185,20 @@ export const useSettingsStore = create<SettingsState>((set) => ({
 interface DashboardState {
   metrics: ReturnType<typeof DB.getDashboardMetrics> | null;
   loading: boolean;
+  error: string | null;
   refresh: () => void;
 }
 
 export const useDashboardStore = create<DashboardState>((set) => ({
   metrics: null,
   loading: true,
+  error: null,
   refresh: () => {
     try {
       const metrics = DB.getDashboardMetrics();
-      set({ metrics, loading: false });
+      set({ metrics, loading: false, error: null });
     } catch (e) {
-      set({ loading: false });
+      set({ loading: false, error: 'No se pudieron cargar las métricas' });
     }
   },
 }));

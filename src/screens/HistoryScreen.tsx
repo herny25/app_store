@@ -83,20 +83,6 @@ export default function HistoryScreen() {
       const { from, to } = getDateRange(dateFilter);
       const data = DB.getSalesByDateRange(from, to);
       setSales(data);
-
-      const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-      const weekly: { day: string; revenue: number }[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
-        const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59).toISOString();
-        const dayRevenue = data
-          .filter(s => s.createdAt >= dayStart && s.createdAt <= dayEnd && s.status !== 'refunded')
-          .reduce((sum, s) => sum + s.total, 0);
-        weekly.push({ day: days[d.getDay()], revenue: dayRevenue });
-      }
-      setWeeklyData(weekly);
     } finally {
       setLoading(false);
     }
@@ -108,6 +94,23 @@ export default function HistoryScreen() {
   const filteredSales = paymentFilter === 'all'
     ? sales
     : sales.filter(s => s.paymentMethod === paymentFilter);
+
+  // Recalcular chart semanal reflejando el filtro de método de pago activo
+  useEffect(() => {
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const weekly: { day: string; revenue: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
+      const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59).toISOString();
+      const dayRevenue = filteredSales
+        .filter(s => s.createdAt >= dayStart && s.createdAt <= dayEnd && s.status !== 'refunded')
+        .reduce((sum, s) => sum + s.total, 0);
+      weekly.push({ day: days[d.getDay()], revenue: dayRevenue });
+    }
+    setWeeklyData(weekly);
+  }, [sales, paymentFilter]);
 
   const completedSales = filteredSales.filter(s => s.status !== 'refunded');
   const totalRevenue = completedSales.reduce((sum, s) => sum + s.total, 0);

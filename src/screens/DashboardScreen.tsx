@@ -20,7 +20,7 @@ function getGreeting() {
 }
 
 export default function DashboardScreen() {
-  const { metrics, loading, refresh } = useDashboardStore();
+  const { metrics, loading, error, refresh } = useDashboardStore();
   const { load: loadProducts } = useProductsStore();
   const { storeName, ownerName, save } = useSettingsStore();
 
@@ -52,6 +52,23 @@ export default function DashboardScreen() {
     save(editStore, editOwner);
     setEditVisible(false);
   };
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.loading}>
+          <Text style={{ fontSize: 36, marginBottom: 12 }}>⚠️</Text>
+          <Text style={[styles.loadingText, { color: COLORS.text, marginBottom: 16 }]}>{error}</Text>
+          <TouchableOpacity
+            style={{ backgroundColor: COLORS.blue, borderRadius: 10, paddingHorizontal: 24, paddingVertical: 10 }}
+            onPress={refresh}
+          >
+            <Text style={{ color: COLORS.white, fontFamily: FONTS.bold, fontSize: 14 }}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (!metrics) {
     return (
@@ -94,7 +111,7 @@ export default function DashboardScreen() {
               <Text style={styles.greeting}>{getGreeting()}, {ownerName}! 👋</Text>
             </View>
             <TouchableOpacity style={styles.avatar} onPress={openEdit} activeOpacity={0.8}>
-              <Text style={styles.avatarText}>{ownerName.charAt(0).toUpperCase()}</Text>
+              <Text style={styles.avatarText}>{(ownerName.charAt(0) || '?').toUpperCase()}</Text>
             </TouchableOpacity>
           </View>
 

@@ -14,7 +14,7 @@ export function getDB(): SQLite.SQLiteDatabase {
 
 // ─── Migrations / Schema ──────────────────────────────────────
 
-export async function initDatabase(): Promise<void> {
+export function initDatabase(): void {
   const db = getDB();
 
   // Products table
@@ -83,93 +83,21 @@ export async function initDatabase(): Promise<void> {
     );
   `);
 
-  // Seed data if products table is empty
-  const count = db.getFirstSync<{ count: number }>(
-    'SELECT COUNT(*) as count FROM products'
+  // Migración v1: elimina datos de demo si la BD no tiene versión asignada
+  const version = db.getFirstSync<{ value: string }>(
+    'SELECT value FROM settings WHERE key = ?', ['db_version']
   );
-  if (count && count.count === 0) {
-    await seedData(db);
-  }
-}
-
-// ─── Seed Data ────────────────────────────────────────────────
-
-async function seedData(db: SQLite.SQLiteDatabase): Promise<void> {
-  const now = new Date().toISOString();
-
-  const products = [
-    { id: 'p1', name: 'Café Premium', category: 'Bebidas', price: 5.99, cost: 2.0, stock: 120, min_stock: 30, emoji: '☕' },
-    { id: 'p2', name: 'Hub USB-C Pro', category: 'Electrónica', price: 39.99, cost: 18.0, stock: 48, min_stock: 15, emoji: '💻' },
-    { id: 'p3', name: 'Auriculares Pro', category: 'Electrónica', price: 79.99, cost: 35.0, stock: 32, min_stock: 10, emoji: '🎧' },
-    { id: 'p4', name: 'Mouse Inalámbrico', category: 'Electrónica', price: 24.99, cost: 10.0, stock: 2, min_stock: 10, emoji: '🖱️' },
-    { id: 'p5', name: 'Set de Cuadernos', category: 'Papelería', price: 12.99, cost: 5.0, stock: 11, min_stock: 20, emoji: '📓' },
-    { id: 'p6', name: 'Funda para Móvil', category: 'Accesorios', price: 14.99, cost: 4.0, stock: 8, min_stock: 15, emoji: '📱' },
-    { id: 'p7', name: 'Batería Portátil 20K', category: 'Electrónica', price: 34.99, cost: 15.0, stock: 65, min_stock: 10, emoji: '🔋' },
-    { id: 'p8', name: 'Pack Té Verde', category: 'Bebidas', price: 8.99, cost: 3.5, stock: 45, min_stock: 20, emoji: '🍵' },
-    { id: 'p9', name: 'Notas Adhesivas', category: 'Papelería', price: 4.99, cost: 1.5, stock: 88, min_stock: 25, emoji: '📌' },
-    { id: 'p10', name: 'Limpiador de Pantalla', category: 'Accesorios', price: 9.99, cost: 3.0, stock: 30, min_stock: 15, emoji: '🧽' },
-    { id: 'p11', name: 'Bebida Energética', category: 'Bebidas', price: 3.49, cost: 1.2, stock: 0, min_stock: 30, emoji: '🥤' },
-    { id: 'p12', name: 'Webcam HD', category: 'Electrónica', price: 59.99, cost: 25.0, stock: 18, min_stock: 8, emoji: '📷' },
-  ];
-
-  for (const p of products) {
-    db.runSync(
-      `INSERT INTO products (id, name, category, price, cost, stock, min_stock, emoji, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [p.id, p.name, p.category, p.price, p.cost, p.stock, p.min_stock, p.emoji, now, now]
-    );
-  }
-
-  // Seed some historical sales (last 7 days)
-  const methods: Array<'cash' | 'card' | 'transfer'> = ['cash', 'card', 'transfer'];
-  const saleProducts = [
-    { id: 'p1', name: 'Café Premium', price: 5.99 },
-    { id: 'p2', name: 'Hub USB-C Pro', price: 39.99 },
-    { id: 'p3', name: 'Auriculares Pro', price: 79.99 },
-    { id: 'p7', name: 'Batería Portátil 20K', price: 34.99 },
-    { id: 'p9', name: 'Notas Adhesivas', price: 4.99 },
-  ];
-
-  let saleCounter = 1000;
-  for (let daysAgo = 6; daysAgo >= 0; daysAgo--) {
-    const txCount = daysAgo === 0 ? 8 : Math.floor(Math.random() * 12) + 8;
-    for (let t = 0; t < txCount; t++) {
-      saleCounter++;
-      const saleDate = new Date();
-      saleDate.setDate(saleDate.getDate() - daysAgo);
-      saleDate.setHours(9 + Math.floor(Math.random() * 10));
-      saleDate.setMinutes(Math.floor(Math.random() * 60));
-
-      const itemCount = Math.floor(Math.random() * 3) + 1;
-      const saleItems: { id: string; name: string; price: number; qty: number }[] = [];
-      for (let i = 0; i < itemCount; i++) {
-        const rp = saleProducts[Math.floor(Math.random() * saleProducts.length)];
-        const existing = saleItems.find(si => si.id === rp.id);
-        if (existing) { existing.qty++; }
-        else { saleItems.push({ ...rp, qty: 1 }); }
-      }
-
-      const subtotal = saleItems.reduce((sum, si) => sum + si.price * si.qty, 0);
-      const discount = Math.random() > 0.7 ? subtotal * 0.1 : 0;
-      const total = subtotal - discount;
-      const saleId = `s${saleCounter}`;
-      const method = methods[Math.floor(Math.random() * methods.length)];
-      const status = Math.random() > 0.95 ? 'refunded' : 'completed';
-
+  if (!version) {
+    db.withTransactionSync(() => {
+      db.execSync('DELETE FROM inventory_adjustments');
+      db.execSync('DELETE FROM sale_items');
+      db.execSync('DELETE FROM sales');
+      db.execSync('DELETE FROM products');
       db.runSync(
-        `INSERT INTO sales (id, subtotal, discount, total, payment_method, status, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [saleId, subtotal, discount, total, method, status, saleDate.toISOString()]
+        'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+        ['db_version', '1']
       );
-
-      saleItems.forEach((si, idx) => {
-        db.runSync(
-          `INSERT INTO sale_items (id, sale_id, product_id, product_name, quantity, unit_price, subtotal)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [`${saleId}_${idx}`, saleId, si.id, si.name, si.qty, si.price, si.price * si.qty]
-        );
-      });
-    }
+    });
   }
 }
 
@@ -265,26 +193,28 @@ export function updateStock(productId: string, newStock: number, reason: string)
 
 export function createSale(sale: Sale): void {
   const db = getDB();
-  db.runSync(
-    `INSERT INTO sales (id, subtotal, discount, total, payment_method, status, customer_name, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [sale.id, sale.subtotal, sale.discount, sale.total, sale.paymentMethod,
-     sale.status, sale.customerName ?? null, sale.createdAt]
-  );
+  db.withTransactionSync(() => {
+    db.runSync(
+      `INSERT INTO sales (id, subtotal, discount, total, payment_method, status, customer_name, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [sale.id, sale.subtotal, sale.discount, sale.total, sale.paymentMethod,
+       sale.status, sale.customerName ?? null, sale.createdAt]
+    );
 
-  for (const item of sale.items) {
-    db.runSync(
-      `INSERT INTO sale_items (id, sale_id, product_id, product_name, quantity, unit_price, subtotal)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [item.id, item.saleId, item.productId, item.productName,
-       item.quantity, item.unitPrice, item.subtotal]
-    );
-    // Decrement stock
-    db.runSync(
-      'UPDATE products SET stock = MAX(0, stock - ?), updated_at = ? WHERE id = ?',
-      [item.quantity, new Date().toISOString(), item.productId]
-    );
-  }
+    for (const item of sale.items) {
+      db.runSync(
+        `INSERT INTO sale_items (id, sale_id, product_id, product_name, quantity, unit_price, subtotal)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [item.id, item.saleId, item.productId, item.productName,
+         item.quantity, item.unitPrice, item.subtotal]
+      );
+      // Decrement stock (no baja de 0)
+      db.runSync(
+        'UPDATE products SET stock = MAX(0, stock - ?), updated_at = ? WHERE id = ?',
+        [item.quantity, new Date().toISOString(), item.productId]
+      );
+    }
+  });
 }
 
 export function getSales(limit = 50, offset = 0): Sale[] {
@@ -407,7 +337,7 @@ export function getDashboardMetrics() {
   );
 
   const todayRevenue = todayStats?.revenue ?? 0;
-  const yesterdayRevenue = yesterdayStats?.revenue ?? 1;
+  const yesterdayRevenue = yesterdayStats?.revenue ?? 0;
   const revenueChange = yesterdayRevenue > 0
     ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100
     : 0;

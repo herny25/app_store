@@ -30,7 +30,7 @@ const EMOJI_OPTIONS = [
 ];
 
 export default function ProductsScreen() {
-  const { products, load, setSearch, setCategory, selectedCategory, search, filtered, refresh } = useProductsStore();
+  const { products, load, setSearch, setCategory, selectedCategory, search, filtered, refresh, error } = useProductsStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const [form, setForm] = useState({ name: '', category: 'Electrónica', price: '', cost: '', stock: '', minStock: '10', emoji: '📦' });
@@ -97,7 +97,7 @@ export default function ProductsScreen() {
       Alert.alert('Inválido', 'Ingresa una cantidad válida');
       return;
     }
-    DB.updateProduct({ ...restockProduct, stock: restockProduct.stock + qty });
+    DB.updateStock(restockProduct.id, restockProduct.stock + qty, 'Ingreso de stock');
     refresh();
     setRestockProduct(null);
   };
@@ -106,7 +106,7 @@ export default function ProductsScreen() {
     Alert.alert('Eliminar Producto', `¿Eliminar "${p.name}" del inventario?`, [
       { text: 'Cancelar', style: 'cancel' },
       {
-        text: 'Delete', style: 'destructive',
+        text: 'Eliminar', style: 'destructive',
         onPress: () => { DB.deleteProduct(p.id); refresh(); },
       },
     ]);
@@ -156,6 +156,15 @@ export default function ProductsScreen() {
       </View>
 
       {/* Products List */}
+      {error && (
+        <View style={styles.errorBanner}>
+          <Text style={styles.errorBannerText}>⚠️ {error}</Text>
+          <TouchableOpacity onPress={load}>
+            <Text style={styles.errorBannerRetry}>Reintentar</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <FlatList
         data={displayedProducts}
         keyExtractor={i => i.id}
@@ -519,6 +528,18 @@ const styles = StyleSheet.create({
     color: COLORS.text3,
     marginTop: 2,
   },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: COLORS.redPale,
+    paddingHorizontal: SPACING.xl,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.red,
+  },
+  errorBannerText: { fontFamily: FONTS.medium, fontSize: 13, color: COLORS.redText, flex: 1 },
+  errorBannerRetry: { fontFamily: FONTS.bold, fontSize: 13, color: COLORS.red, marginLeft: 12 },
   emojiRow: { marginBottom: 16 },
   emojiOption: {
     width: 44,

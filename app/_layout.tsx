@@ -34,16 +34,13 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    initDatabase()
-      .then(() => {
-        loadSettings();
-        setDbReady(true);
-      })
-      .catch(e => {
-        console.error('DB init error:', e);
-        loadSettings();
-        setDbReady(true); // still proceed
-      });
+    try {
+      initDatabase();
+    } catch (e) {
+      console.error('DB init error:', e);
+    }
+    loadSettings();
+    setDbReady(true);
   }, []);
 
   if ((!fontsLoaded && !fontsError) || !dbReady) {
